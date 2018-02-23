@@ -55,13 +55,27 @@
         },
         "subnetName": {
             "type": "string"
+        },
+        "publicIpAddressName": {
+            "type": "string"
+        },
+        "publicIpAddressType": {
+            "type": "string"
+        },
+        "publicIpAddressSku": {
+            "type": "string"
         }
     },
     "variables": {
         "storageAccountName":"[concat(parameters('storageAccountPrefix'),uniqueString(resourceGroup().id))]",
         "diagnosticsStorageAccountName":"[concat(parameters('diagnosticsStorageAccountPrefix'),uniqueString(resourceGroup().id))]",
         "vnetId": "[resourceId(parameters('vnetResourceGroupName'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-        "subnetRef": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName'))]"
+        "subnetRef": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName'))]",
+        "loadBalancerName": "[concat(parameters('virtualMachineBaseName'), 'LoadBalancer')]",
+        "lbID": "[resourceId('Microsoft.Network/loadBalancers', variables('loadBalancerName'))]",
+        "frontEndIPConfigID": "[concat(variables('lbID'),'/frontendIPConfigurations/LoadBalancerFrontEnd')]",
+        "lbPoolID": "[concat(variables('lbID'),'/backendAddressPools/BackendPool1')]",
+        "lbProbeID": "[concat(variables('lbID'),'/probes/tcpProbe')]"
     },
     "resources": [
         {
@@ -100,10 +114,10 @@
                 },
                 "storageProfile": {
                     "imageReference": {
-                        "publisher": "Avanade",
-                        "offer": "centos7.4",
-                        "sku": "centos7.4",
-                        "version": "0.0.1"
+                        "publisher": "CoreOS",
+                        "offer": "CoreOS",
+                        "sku": "Stable",
+                        "version": "latest"
                     },
                     "osDisk": {
                         "createOption": "fromImage",
@@ -166,6 +180,7 @@
             "apiVersion": "2015-06-15",
             "location": "[parameters('location')]",
             "dependsOn": [
+                "[concat('Microsoft.Network/loadBalancers/', variables('loadBalancerName'))]",
                 "[concat('Microsoft.Network/networkSecurityGroups/', parameters('networkSecurityGroupName'))]"
             ],
             "copy": {
@@ -180,7 +195,16 @@
                             "subnet": {
                                 "id": "[variables('subnetRef')]"
                             },
-                            "privateIPAllocationMethod": "Dynamic"
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                  "id": "[concat(variables('lbID'), '/backendAddressPools/BackendPool1')]"
+                                }
+                            ],
+                            "loadBalancerInboundNatRules": [
+                                {
+                                  "id": "[concat(variables('lbID'),'/inboundNatRules/RDP-VM', copyindex(1))]"
+                                }    
+                            ]
                         }
                     }
                 ],
@@ -209,8 +233,111 @@
                             "destinationPortRange": "22"
                         }
                     }
-                ]            }
+                ]            
+            }
+        },
+
+
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/loadBalancers",
+            "name": "[variables('loadBalancerName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIPAddresses/', parameters('publicIpAddressName'))]"
+            ],
+
+            "properties": {
+              "frontendIPConfigurations": [
+                {
+                  "properties": {
+                    "publicIpAddress": {
+                        "id": "[resourceId(resourceGroup().name,'Microsoft.Network/publicIpAddresses', parameters('publicIpAddressName'))]"
+                    }
+                  },
+                  "name": "LoadBalancerFrontend"
+                }
+              ],
+              "backendAddressPools": [
+                {
+                  "name": "BackendPool1"
+                }
+              ],
+              "inboundNatRules": [
+                {
+                  "name": "RDP-VM1",
+                  "properties": {
+                    "frontendIPConfiguration": {
+                      "id": "[variables('frontEndIPConfigID')]"
+                    },
+                    "protocol": "tcp",
+                    "frontendPort": 50001,
+                    "backendPort": 3389,
+                    "enableFloatingIP": false
+                  }
+                },
+                {
+                  "name": "RDP-VM2",
+                  "properties": {
+                    "frontendIPConfiguration": {
+                      "id": "[variables('frontEndIPConfigID')]"
+                    },
+                    "protocol": "tcp",
+                    "frontendPort": 50002,
+                    "backendPort": 3389,
+                    "enableFloatingIP": false
+                  }
+                }
+              ],
+              "loadBalancingRules": [
+                {
+                    "Name": "LBRule",
+                    "properties": {
+                    "frontendIPConfiguration": {
+                        "id": "[variables('frontEndIPConfigID')]"
+                    },
+                    "backendAddressPool": {
+                        "id": "[variables('lbPoolID')]"
+                    },
+                    "probe": {
+                        "id": "[variables('lbProbeID')]"
+                    },
+                    "protocol": "Tcp",
+                    "frontendPort": 22,
+                    "backendPort": 22,
+                    "idleTimeoutInMinutes": 15
+                  }
+                }
+              ],
+              "probes": [
+                {
+                  "properties": {
+                    "protocol": "Tcp",
+                    "port": 22,
+                    "intervalInSeconds": 15,
+                    "numberOfProbes": 2
+                  },
+                  "name": "tcpProbe"
+                }
+              ]
+            }
+        },
+        {
+            "name": "[parameters('publicIpAddressName')]",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2015-06-15",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIpAllocationMethod": "[parameters('publicIpAddressType')]"
+            },
+            "sku": {
+                "name": "[parameters('publicIpAddressSku')]"
+            }
         }
+
+
+
+
     ],
     "outputs": {
         "adminUsername": {

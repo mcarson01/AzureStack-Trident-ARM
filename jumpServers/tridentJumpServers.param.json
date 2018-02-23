@@ -54,7 +54,7 @@
             "value": "Standard_LRS"
         },
         "subnetName": {
-            "value": "business"
+            "value": "management"
         },
         "publicIpAddressName": {
             "value": "JumpServer-ip"
