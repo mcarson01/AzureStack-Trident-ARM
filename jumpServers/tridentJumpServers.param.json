@@ -1,0 +1,69 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "value": "westus"
+        },
+        "virtualMachineBaseName": {
+            "value": "centos-jump-server-vm"
+        },
+        "numInstances":{
+            "value": 2
+        },
+        "virtualMachineSize": {
+            "value": "Standard_A1"
+        },
+        "adminUsername": {
+            "value": "cloudadmin"
+        },
+        "virtualNetworkName": {
+            "value": "princess-vnet"
+        },
+        "vnetResourceGroupName": {
+            "value": "princessVnetRR"
+        },
+        "networkInterfaceName": {
+            "value": "centos-jump-server"
+        },
+        "networkSecurityGroupName": {
+            "value": "centos-jump-server-nsg"
+        },
+        "adminPublicKey": {
+            "value": "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAhjx80FWznOVxdkw5ErN4RFnVqk9oJt/3Wvx1C0C4di6vkRNRxdtmt7IpH4ARivRCPOpU5od6LF2dcO4/qgV+MCDxRYMlAtbXUYKkmyVxvWWR4IEYLcXukK5WWQRCiU/u7+ajDjC9Pz7OnhrHjx9CxdaLmN2X4LweYHPEhtTrf5Pro9kcqqQyoNcJ/CUGecJlXZ6jQVZyVsrxdxqhbS70+lLDsK4DWuTNWAy37YXqHOtfx7gCo3bbF/bzFMjcW+D1FwSKnrUG3bNux490RET1Gmb0UxxTvIfeq/9H+50l6jgo6iZZKeA9G9PjpJyI50V6tLtNLLH4lV/H+1mxy7DlvQ=="
+        },
+        "availabilitySetName": {
+            "value": "centos-jump-server-set"
+        },
+        "availabilitySetPlatformFaultDomainCount": {
+            "value": "2"
+        },
+        "availabilitySetPlatformUpdateDomainCount": {
+            "value": "2"
+        },
+        "storageAccountPrefix": {
+            "value": "disk"
+        },
+        "storageAccountType": {
+            "value": "Standard_LRS"
+        },
+        "diagnosticsStorageAccountPrefix": {
+            "value": "stordiag"
+        },
+        "diagnosticsStorageAccountType": {
+            "value": "Standard_LRS"
+        },
+        "subnetName": {
+            "value": "business"
+        },
+        "publicIpAddressName": {
+            "value": "JumpServer-ip"
+        },
+        "publicIpAddressType": {
+            "value": "Dynamic"
+        },
+        "publicIpAddressSku": {
+            "value": "Basic"
+        }
+    }
+}
